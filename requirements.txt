@@ -6,5 +6,9 @@ python-dotenv
 psycopg[binary]   # driver PostgreSQL (v3)
 pgvector          # adaptador do tipo vector para psycopg
 
-# Sprint 2 — interface web
+# Sprint 2 — interface web (Streamlit, versão inicial)
 streamlit
+
+# Sprint 3 — API para o frontend Next.js
+fastapi
+uvicorn[standard]
