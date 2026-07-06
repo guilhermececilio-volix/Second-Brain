@@ -53,7 +53,7 @@ notepad .env
 python scripts\test_gemini.py
 ```
 
-Se o teste passar, o próximo passo é a Sprint 2 (ver `docs/roadmap.md`).
+Se o teste passar, o próximo passo é a Sprint 2 — passo a passo em [`docs/next-steps.md`](docs/next-steps.md).
 
 ## Segurança
 

@@ -1,0 +1,19 @@
+# Segredos
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+
+# Dados locais (notas pessoais não vão para o Git)
+data/*
+!data/.gitkeep
+
+# IDE / SO
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
