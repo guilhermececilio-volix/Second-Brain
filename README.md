@@ -7,7 +7,7 @@ perguntas sobre elas usando RAG (busca semântica + LLM).
 
 ## Stack
 
-Python · Obsidian (fonte) · PostgreSQL + pgvector · LlamaIndex · Gemini (embeddings + chat) · Streamlit
+Python · Obsidian (fonte) · PostgreSQL + pgvector · Gemini (embeddings + chat) · Streamlit
 
 Detalhes em [`ARCHITECTURE.md`](ARCHITECTURE.md). Contexto para agentes de IA em [`CLAUDE.md`](CLAUDE.md).
 

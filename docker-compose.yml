@@ -1,0 +1,29 @@
+# PostgreSQL com a extensão pgvector já embutida.
+# Sobe o banco da Sprint 2 (RAG). Rode da raiz do projeto:
+#
+#     docker compose up -d
+#
+# Os dados persistem no volume 'pgdata' entre reinícios. A DATABASE_URL
+# correspondente vai no .env (veja .env.example).
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: second-brain-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: second_brain
+      POSTGRES_PASSWORD: second_brain
+      POSTGRES_DB: second_brain
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U second_brain -d second_brain"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

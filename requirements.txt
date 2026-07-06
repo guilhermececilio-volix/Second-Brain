@@ -2,10 +2,9 @@
 google-genai
 python-dotenv
 
-# Sprint 2 (descomente quando for implementar o RAG)
-# llama-index
-# llama-index-embeddings-google-genai
-# llama-index-llms-google-genai
-# llama-index-vector-stores-postgres
-# psycopg2-binary
+# Sprint 2 — RAG (banco pgvector)
+psycopg[binary]   # driver PostgreSQL (v3)
+pgvector          # adaptador do tipo vector para psycopg
+
+# Sprint 2 — interface (adicionado no passo do Streamlit)
 # streamlit

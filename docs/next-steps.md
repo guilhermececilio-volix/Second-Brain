@@ -11,42 +11,48 @@ python scripts\test_gemini.py
 
 Só siga adiante se este teste passar.
 
-## Passo 1 — Subir PostgreSQL + pgvector (manual)
+## Passo 1 — Subir PostgreSQL + pgvector ✅ (compose pronto)
 
-Instalar Docker Desktop e criar um `docker-compose.yml` na raiz com a imagem
-`pgvector/pgvector:pg17`. Depois:
+O `docker-compose.yml` já existe na raiz (imagem `pgvector/pgvector:pg17`).
+Instale o Docker Desktop, depois, da raiz do projeto:
 
 ```powershell
 docker compose up -d
 ```
 
-E preencher `DATABASE_URL` no `.env`.
+E preencha `DATABASE_URL` no `.env` (o valor de exemplo já bate com o compose).
 
-## Passo 2 — `src/db.py`
+## Passo 2 — `src/db.py` ✅ (implementado)
 
-Conexão com o banco + criação do schema:
+Conexão com o banco + criação do schema, via `psycopg` + `pgvector`:
 
-- Tabela `chunks`: id, caminho da nota, hash do arquivo, texto do chunk,
-  vetor `vector(768)`, coluna `owner` (preparo para multiusuário)
+- Tabela `chunks`: id, `owner`, caminho da nota, hash do arquivo, índice do
+  chunk, texto e vetor `vector(768)`
 - Índice HNSW para busca por similaridade de cosseno
 - Única camada do projeto que fala SQL
 
-## Passo 3 — `src/ingest.py` + `scripts/ingest.py`
+## Passo 3 — `src/ingest.py` + `scripts/ingest.py` ✅ (implementado)
 
 Pipeline vault → banco:
 
-- Ler `.md` do vault (`OBSIDIAN_VAULT_PATH` no `.env`) — **somente leitura**
-- Chunking: ~500 tokens com overlap
-- Incremental: comparar hash do arquivo e só re-embeddar o que mudou
-- Gerar embeddings em lote (`embed_batch`) e gravar
+- Lê `.md` do vault (`OBSIDIAN_VAULT_PATH` no `.env`) — **somente leitura**
+- Chunking com overlap (proxy por caracteres, ~500 tokens)
+- Incremental: compara hash do arquivo e só re-embeda o que mudou; remove
+  do banco notas que sumiram do vault
+- Gera embeddings em lote (`embed_batch`) e grava
 
-## Passo 4 — `src/query.py` + `scripts/ask.py`
+Rodar: `python scripts/ingest.py`
+
+## Passo 4 — `src/query.py` + `scripts/ask.py` ✅ (implementado)
 
 Pipeline pergunta → resposta:
 
 - Embedding da pergunta → top-K chunks por similaridade
-- Montar prompt com contexto + pergunta
+- Monta prompt com contexto + pergunta; instrução de sistema restringe a
+  resposta ao contexto (não inventa) e pede citação das notas
 - Resposta do Gemini citando as notas de origem
+
+Rodar: `python scripts/ask.py "sua pergunta"` (ou sem argumento p/ modo interativo)
 
 ## Passo 5 — Interface Streamlit (`app.py`)
 

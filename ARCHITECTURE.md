@@ -56,9 +56,12 @@ busca por similaridade com índice próprio (HNSW). Escolhido em vez de um vecto
 DB dedicado (Pinecone, Chroma) porque Postgres é um banco completo: quando o
 projeto virar multiusuário, usuários, permissões e notas ficam no mesmo lugar.
 
-**LlamaIndex.** Framework que orquestra o pipeline de RAG (leitura do vault,
-chunking, ingestão, retrieval, montagem do prompt). Evita reescrever
-encanamento que já existe pronto e bem testado.
+**RAG à mão (sem framework).** O pipeline — ler o vault, chunking, ingestão,
+retrieval, montagem do prompt — é escrito em Python puro reusando os wrappers
+`GeminiLLM`/`GeminiEmbeddings` que já temos. Como o RAG do MVP é simples (Markdown
+→ chunks → busca por cosseno), um framework como LlamaIndex traria seus próprios
+adaptadores de LLM/embeddings/banco e abriria mão dos nossos wrappers, sem ganho
+real nesta escala. Mantemos controle total e a regra de "um SDK por módulo".
 
 **Gemini para chat.** `gemini-2.5-flash`: rápido, barato e suficiente para
 sintetizar respostas a partir de contexto recuperado. O wrapper em `src/llm.py`
