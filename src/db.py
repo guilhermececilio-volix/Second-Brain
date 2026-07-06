@@ -163,3 +163,34 @@ class Database:
                 (query_vector, owner, top_k),
             )
             return [SearchHit(row[0], row[1], row[2]) for row in cur.fetchall()]
+
+    def related_notes(
+        self,
+        query_vector: list[float],
+        exclude_note: str,
+        top_k: int = 8,
+        max_distance: float = 0.5,
+        owner: str = DEFAULT_OWNER,
+    ) -> list[tuple[str, float]]:
+        """Pré-seleciona candidatos a link por proximidade de embedding.
+
+        Não decide o link sozinha — só reduz o universo às notas mais próximas
+        (teto frouxo, para descartar o claramente distante). Quem decide se há
+        relação de verdade é o Gemini (ver query.relates). Agrupa por nota (menor
+        distância entre os chunks), exclui a própria nota-fonte. Lista de
+        (note_path, distância), da mais parecida para a menos.
+        """
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT note_path, MIN(embedding <=> %s::vector) AS distance
+                FROM chunks
+                WHERE owner = %s AND note_path <> %s
+                GROUP BY note_path
+                HAVING MIN(embedding <=> %s::vector) <= %s
+                ORDER BY distance
+                LIMIT %s;
+                """,
+                (query_vector, owner, exclude_note, query_vector, max_distance, top_k),
+            )
+            return [(row[0], row[1]) for row in cur.fetchall()]

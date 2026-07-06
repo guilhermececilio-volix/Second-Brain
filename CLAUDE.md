@@ -18,7 +18,10 @@ Sprint 2 pendente: `src/db.py`, `src/ingest.py`, `src/query.py`, Streamlit.
 - **Um módulo por dependência externa**: só `src/llm.py` e `src/embeddings.py`
   importam `google.genai`; só `src/config.py` lê o `.env`; só `src/db.py`
   (futuro) fala SQL. Não vaze SDKs para outros arquivos.
-- **Nunca escrever no vault do Obsidian** — o projeto é somente leitura das notas.
+- **Escrita no vault é sempre append-only** — o app lê todas as notas; cria
+  novas em `Capturas/` e, ao guardar, acrescenta uma seção `## Relacionadas`
+  com `[[links]]` (nos dois sentidos) tanto na nota nova quanto nas parecidas.
+  Nunca reescreve nem apaga o texto que o usuário já tinha — só adiciona links.
 - Embeddings com **768 dimensões** (definido em `src/embeddings.py`). Se mudar,
   o schema do pgvector muda junto.
 - Idioma do código: identificadores em inglês, docstrings/comentários em pt-BR.
@@ -28,4 +31,5 @@ Sprint 2 pendente: `src/db.py`, `src/ingest.py`, `src/query.py`, Streamlit.
 
 - Windows + PowerShell, Python com venv em `venv/`.
 - Chave do Google AI Studio em `.env` (`GEMINI_API_KEY`).
-- Modelos padrão: `gemini-2.5-flash` (chat), `gemini-embedding-001` (embeddings).
+- Modelos padrão: `gemini-3.1-flash-lite` (chat — 500 req/dia no free tier, bem
+  acima dos 20/dia do 2.5-flash), `gemini-embedding-001` (embeddings).

@@ -1,0 +1,12 @@
+# Tema base do app, na identidade da Volix (paleta SDG).
+# Fixar aqui faz o Streamlit nascer escuro — o CSS em src/theme.py só refina.
+[theme]
+base = "dark"
+primaryColor = "#43C49E"
+backgroundColor = "#0A0F0D"
+secondaryBackgroundColor = "#101814"
+textColor = "#E6EDE9"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"

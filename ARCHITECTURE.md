@@ -43,7 +43,13 @@ FASE 2 — CONSULTA (roda a cada pergunta)
 ## Por que cada peça
 
 **Obsidian como fonte.** Suas notas já vivem lá, em Markdown puro. O projeto
-apenas lê os arquivos do vault — nunca escreve neles. Zero lock-in.
+lê todos os arquivos do vault e, quando você "guarda" um pensamento pela
+interface, escreve um novo `.md` na subpasta `Capturas/`. Em seguida, usa os
+embeddings para achar as notas mais parecidas e acrescenta uma seção
+`## Relacionadas` com `[[links]]` nos dois sentidos (na nota nova e nas
+parecidas) — assim as conexões por significado aparecem também no grafo do
+Obsidian. Toda escrita é *append-only*: o texto que você já tinha nunca é
+reescrito nem apagado. O Obsidian segue como fonte da verdade; zero lock-in.
 
 **Embeddings (gemini-embedding-001).** Um embedding converte texto em um vetor
 onde textos de significado parecido ficam geometricamente próximos. É isso que

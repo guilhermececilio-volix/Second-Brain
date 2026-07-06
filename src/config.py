@@ -28,7 +28,7 @@ class Settings:
     """Valores de configuração imutáveis, lidos do ambiente."""
 
     gemini_api_key: str = field(default_factory=lambda: os.environ.get("GEMINI_API_KEY", ""))
-    chat_model: str = field(default_factory=lambda: os.environ.get("GEMINI_CHAT_MODEL", "gemini-2.5-flash"))
+    chat_model: str = field(default_factory=lambda: os.environ.get("GEMINI_CHAT_MODEL", "gemini-3.1-flash-lite"))
     embedding_model: str = field(default_factory=lambda: os.environ.get("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001"))
 
     # Sprint 2
