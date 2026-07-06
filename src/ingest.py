@@ -216,6 +216,30 @@ def delete_capture(note_path: str, vault_path: str | None = None) -> None:
     Database().delete_note(note_path)
 
 
+def read_note(note_path: str, vault_path: str | None = None) -> str:
+    """Lê o Markdown atual de uma nota do cofre."""
+    vault = Path(vault_path) if vault_path else _require_vault()
+    return (vault / note_path).read_text(encoding="utf-8", errors="replace")
+
+
+def find_candidates(text: str, vault_path: str | None = None) -> list[tuple[str, str]]:
+    """Notas mais próximas do texto, como (note_path, conteúdo).
+
+    Usado para decidir se uma anotação nova atualiza uma nota existente e para
+    o auto-link. Pré-seleção por embedding; quem decide o resto é o Gemini.
+    """
+    vault = Path(vault_path) if vault_path else _require_vault()
+    db = Database()
+    vetor = GeminiEmbeddings().embed(text)
+    candidatos = db.related_notes(vetor, exclude_note="", top_k=CANDIDATES_TOP_K)
+    pares: list[tuple[str, str]] = []
+    for rel_path, _dist in candidatos:
+        f = vault / rel_path
+        if f.is_file():
+            pares.append((rel_path, f.read_text(encoding="utf-8", errors="replace")))
+    return pares
+
+
 # Marca a seção de links que o app gerencia. Só mexemos dentro dela — o texto
 # que o usuário escreveu acima nunca é tocado.
 RELATED_HEADER = "## Relacionadas"

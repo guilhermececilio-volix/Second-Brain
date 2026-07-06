@@ -181,3 +181,82 @@ def structure_note(text: str, date_str: str) -> str:
         raise ValueError("Não há texto para estruturar.")
     prompt = f"Data de hoje: {date_str}\n\nAnotação do usuário:\n{text}"
     return GeminiLLM().ask(prompt, system=STRUCTURE_PROMPT).strip()
+
+
+# --- Decidir: a anotação nova atualiza uma nota existente, ou é assunto novo? ---
+
+# Resultado da decisão. action é 'criar', 'atualizar' ou 'duvida'.
+@dataclass
+class SaveAction:
+    action: str
+    note_path: str | None = None  # preenchido em 'atualizar' e 'duvida'
+
+
+DECIDE_PROMPT = (
+    "Você recebe uma ANOTAÇÃO NOVA e uma lista de NOTAS EXISTENTES da mesma pessoa. "
+    "Decida o que fazer com a anotação nova.\n\n"
+    "REGRA PRINCIPAL: só 'atualizar' quando a anotação nova é sobre EXATAMENTE A "
+    "MESMA COISA ESPECÍFICA de uma nota — o mesmo item concreto que mudou de estado "
+    "ou ganhou um detalhe. Pertencer à mesma CATEGORIA não basta.\n\n"
+    "Exemplos:\n"
+    "- Nota: 'estou no pity 72 na Nicole'. Nova: 'agora pity 74 na Nicole' → "
+    "atualizar (é o MESMO pity, mudou o número).\n"
+    "- Nota: 'reunião do Hunter sexta às 14h'. Nova: 'reunião às 15h com o time de "
+    "IA' → criar (são reuniões DIFERENTES: outro assunto, outro horário; só serem "
+    "'reuniões' não torna a mesma).\n"
+    "- Duas ideias diferentes, dois projetos diferentes, dois eventos diferentes → "
+    "sempre criar.\n\n"
+    "Responda em uma linha, só isso:\n"
+    "- 'atualizar N' se é a mesma coisa específica da nota N.\n"
+    "- 'criar' se é assunto/item novo (na dúvida entre criar e atualizar, prefira criar).\n"
+    "- 'duvida N' só se for realmente ambíguo se é a mesma coisa da nota N."
+)
+
+
+def decide_save_action(text: str, candidates: list[tuple[str, str]]) -> SaveAction:
+    """Decide se a anotação cria, atualiza ou está em dúvida sobre uma nota.
+
+    candidates é uma lista de (note_path, texto). Sem candidatos → sempre 'criar'.
+    """
+    if not candidates:
+        return SaveAction("criar")
+
+    blocos = []
+    for i, (_id, texto) in enumerate(candidates):
+        blocos.append(f"[{i}]\n{texto[:_RELATES_MAX_CHARS]}")
+    lista = "\n\n".join(blocos)
+    prompt = (
+        f"ANOTAÇÃO NOVA:\n{text[:_RELATES_MAX_CHARS]}\n\n"
+        f"NOTAS EXISTENTES:\n{lista}\n\nO que fazer?"
+    )
+    resposta = GeminiLLM().ask(prompt, system=DECIDE_PROMPT).lower().strip()
+
+    numeros = re.findall(r"\d+", resposta)
+    idx = int(numeros[0]) if numeros else -1
+    valido = 0 <= idx < len(candidates)
+
+    if resposta.startswith("atualizar") and valido:
+        return SaveAction("atualizar", candidates[idx][0])
+    if resposta.startswith("duvida") and valido:
+        return SaveAction("duvida", candidates[idx][0])
+    return SaveAction("criar")
+
+
+# Instrução para mesclar a novidade numa nota existente SEM perder informação.
+MERGE_PROMPT = (
+    "Você atualiza uma nota Markdown existente com uma informação nova. "
+    "REGRA CRÍTICA: preserve TODO o conteúdo atual — frontmatter, título e corpo — "
+    "e apenas incorpore a novidade no lugar certo (ex.: troque um número que mudou, "
+    "acrescente um fato). NÃO apague nem resuma o que já existe. Não invente. "
+    "Se a nota tem uma seção '## Relacionadas' com links, mantenha-a intacta no fim. "
+    "Responda só o Markdown completo da nota atualizada, sem comentários."
+)
+
+
+def merge_note(current_markdown: str, new_info: str) -> str:
+    """Reescreve a nota existente incorporando a informação nova, preservando o resto."""
+    prompt = (
+        f"NOTA ATUAL:\n{current_markdown}\n\n"
+        f"INFORMAÇÃO NOVA A INCORPORAR:\n{new_info}\n\nNota atualizada:"
+    )
+    return GeminiLLM().ask(prompt, system=MERGE_PROMPT).strip()

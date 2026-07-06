@@ -3,9 +3,9 @@
 [theme]
 base = "dark"
 primaryColor = "#43C49E"
-backgroundColor = "#0A0F0D"
-secondaryBackgroundColor = "#101814"
-textColor = "#E6EDE9"
+backgroundColor = "#0A0A0B"
+secondaryBackgroundColor = "#141416"
+textColor = "#D4D4D8"
 font = "sans serif"
 
 [client]

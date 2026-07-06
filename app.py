@@ -16,8 +16,20 @@ from datetime import datetime
 import streamlit as st
 from google.genai.errors import ClientError
 
-from src.ingest import capture, delete_capture, update_capture
-from src.query import answer, classify, structure_note
+from src.ingest import (
+    capture,
+    delete_capture,
+    find_candidates,
+    read_note,
+    update_capture,
+)
+from src.query import (
+    answer,
+    classify,
+    decide_save_action,
+    merge_note,
+    structure_note,
+)
 from src.theme import apply_theme
 
 
@@ -52,28 +64,74 @@ def _answer_message(texto: str) -> dict:
     return {"role": "assistant", "type": "answer", "content": corpo}
 
 
-def _save(texto: str) -> dict:
-    """Estrutura e grava a anotação na hora. Guarda o path para Editar/Desfazer."""
+def _create(texto: str) -> dict:
+    """Estrutura e cria uma nota nova. Guarda o path para Editar/Desfazer."""
     hoje = datetime.now().strftime("%Y-%m-%d")
     nota = structure_note(texto, hoje)
     note_path = capture(nota)
-    return {"role": "assistant", "type": "saved", "note_path": note_path, "content": nota}
+    return {"role": "assistant", "type": "saved", "note_path": note_path, "content": nota,
+            "acao": "criada"}
+
+
+def _update(note_path: str, texto: str) -> dict:
+    """Mescla a informação nova na nota existente, preservando o resto."""
+    atual = read_note(note_path)
+    nova = merge_note(atual, texto)
+    update_capture(note_path, nova)
+    return {"role": "assistant", "type": "saved", "note_path": note_path, "content": nova,
+            "acao": "atualizada"}
+
+
+def _save(texto: str) -> None:
+    """Decide entre criar nota nova, atualizar existente, ou perguntar (dúvida)."""
+    candidatos = find_candidates(texto)
+    decisao = decide_save_action(texto, candidatos)
+
+    if decisao.action == "atualizar" and decisao.note_path:
+        st.session_state.messages.append(_update(decisao.note_path, texto))
+    elif decisao.action == "duvida" and decisao.note_path:
+        # Não age sozinho: pergunta se atualiza aquela nota ou cria nova.
+        st.session_state.messages.append(
+            {"role": "assistant", "type": "duvida", "note_path": decisao.note_path, "origin": texto}
+        )
+    else:
+        st.session_state.messages.append(_create(texto))
 
 
 def _handle(texto: str, forced: str | None = None) -> None:
-    """Classifica e age: responde ou guarda direto."""
+    """Classifica e age: responde ou guarda (criar/atualizar/dúvida)."""
     kind = forced or classify(texto)
     if kind == "perguntar":
         st.session_state.messages.append(_answer_message(texto))
     else:
-        st.session_state.messages.append(_save(texto))
+        _save(texto)
 
 
 # --- Histórico -------------------------------------------------------------
 for i, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
-        if msg.get("type") == "saved":
-            st.markdown(f"📥 **Guardei** em `{msg['note_path']}` e conectei às notas parecidas.")
+        if msg.get("type") == "duvida":
+            nome = msg["note_path"]
+            st.markdown(f"🤔 Isso parece ter a ver com a nota `{nome}`. Quer **atualizar** ela ou **criar uma nova**?")
+            c1, c2 = st.columns([1, 1])
+            with c1:
+                if st.button("✏️ Atualizar essa", key=f"dv-upd-{i}"):
+                    origin, note_path = msg["origin"], msg["note_path"]
+                    st.session_state.messages.pop(i)
+                    with st.spinner("Atualizando..."):
+                        st.session_state.messages.append(_update(note_path, origin))
+                    st.rerun()
+            with c2:
+                if st.button("🆕 Criar nova", key=f"dv-new-{i}"):
+                    origin = msg["origin"]
+                    st.session_state.messages.pop(i)
+                    with st.spinner("Criando..."):
+                        st.session_state.messages.append(_create(origin))
+                    st.rerun()
+        elif msg.get("type") == "saved":
+            acao = msg.get("acao", "criada")
+            verbo = "Atualizei" if acao == "atualizada" else "Guardei"
+            st.markdown(f"📥 **{verbo}** a nota `{msg['note_path']}`.")
 
             if st.session_state.editing == i:
                 # Modo edição: reabre a nota para ajuste.
