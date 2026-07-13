@@ -1,5 +1,7 @@
 # Segredos
 .env
+.google_token.json
+*.google_token.json
 
 # Python
 __pycache__/

@@ -1,0 +1,71 @@
+{
+  "_comment": "Conjunto de avaliação do RAG, gerado a partir das notas reais ingeridas no vault (13 notas em Capturas/). Cada caso tem uma 'pergunta' e pelo menos um critério: 'nota_esperada' (caminho da nota que DEVERIA embasar a resposta — mede o retrieval) e/ou 'keyword' (termos que devem aparecer na resposta). 'sem_evidencia': true = pergunta sem resposta no vault; o sistema deve recusar. Casos foram escolhidos incluindo notas que competem entre si (3 reuniões, 3 sobre Hunter, 2 sobre a Nicole) — são onde o retrieval mais erra. Rode: python scripts/eval.py  ou  python scripts/eval.py --grounding",
+
+  "casos": [
+    {
+      "id": "perfil-nascimento",
+      "pergunta": "Onde eu nasci e quando?",
+      "nota_esperada": "Capturas/2026-07-06-105408-Perfil-Guilherme.md",
+      "keyword": ["Bahia"]
+    },
+    {
+      "id": "musica-artistas",
+      "pergunta": "Quais artistas eu gosto de ouvir?",
+      "nota_esperada": "Capturas/2026-07-06-111429-Preferências-musicais.md",
+      "keyword": ["Weeknd"]
+    },
+    {
+      "id": "jogo-favorito",
+      "pergunta": "Qual é o meu jogo favorito e minha personagem preferida?",
+      "nota_esperada": "Capturas/2026-07-06-114910-Jogo-e-personagem-favoritos.md",
+      "keyword": ["Genshin", "Furina"]
+    },
+    {
+      "id": "nicole-pity",
+      "pergunta": "Em qual pity eu estou com a Nicole?",
+      "nota_esperada": "Capturas/2026-07-06-115244-Progresso-de-invocação-da-Nicole.md",
+      "keyword": ["76"]
+    },
+    {
+      "id": "hunter-migracao",
+      "pergunta": "O que estou fazendo no projeto Hunter com os dashboards?",
+      "nota_esperada": "Capturas/2026-07-06-110034-Migração-de-Dashboards-Hunter.md",
+      "keyword": ["Power BI"]
+    },
+    {
+      "id": "hunter-decisao-tecnica",
+      "pergunta": "Qual tecnologia decidimos usar no frontend do Hunter?",
+      "nota_esperada": "Capturas/2026-07-06-110351-Decisão-técnica-no-Hunter.md",
+      "keyword": ["Streamlit"]
+    },
+    {
+      "id": "hunter-reuniao-horario",
+      "pergunta": "Para quando foi agendada a reunião com o Hunter e o time de dados?",
+      "nota_esperada": "Capturas/2026-07-06-110051-Reunião-com-Hunter-e-time-de-dados.md",
+      "keyword": ["sexta"]
+    },
+    {
+      "id": "reuniao-3db",
+      "pergunta": "Quando é a reunião de alinhamento da 3DB?",
+      "nota_esperada": "Capturas/2026-07-06-153128-Reunião-de-alinhamento-3DB.md",
+      "keyword": ["10:30"]
+    },
+    {
+      "id": "reuniao-ia-dados",
+      "pergunta": "A que horas é a reunião com o time de engenharia de IA sobre o scrum?",
+      "nota_esperada": "Capturas/2026-07-06-142152-Reunião-com-times-de-IA-e-dados.md",
+      "keyword": ["15:00"]
+    },
+    {
+      "id": "constelacoes-plano",
+      "pergunta": "Quais constelações eu já tenho e quais estou planejando pegar?",
+      "nota_esperada": "Capturas/2026-07-06-115130-Planejamento-de-constelações.md",
+      "keyword": ["C6"]
+    },
+    {
+      "id": "sem-evidencia-clima",
+      "pergunta": "Qual vai ser a previsão do tempo em São Paulo amanhã?",
+      "sem_evidencia": true
+    }
+  ]
+}

@@ -406,3 +406,55 @@ def _embed_all(embedder: GeminiEmbeddings, chunks: list[str]) -> list[list[float
         batch = chunks[start : start + EMBED_BATCH_SIZE]
         vectors.extend(embedder.embed_batch(batch))
     return vectors
+
+
+def _write_note(vault: Path, slug_seed: str, markdown: str) -> str:
+    """Cria um .md único em Capturas/ com o conteúdo dado e o indexa.
+
+    Como capture(), mas sem estruturar nem auto-linkar — o chamador controla os
+    links (usado pela ingestão de reunião, que liga mãe e filhas explicitamente).
+    Retorna o note_path relativo.
+    """
+    capturas = vault / CAPTURE_SUBDIR
+    capturas.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S-%f")  # %f evita colisão em lote
+    md_file = capturas / f"{stamp}-{_title_slug(slug_seed)}.md"
+    md_file.write_text(markdown, encoding="utf-8")
+    note_path = md_file.relative_to(vault).as_posix()
+    ingest_note(md_file, note_path)
+    return note_path
+
+
+def save_meeting(extraction, vault_path: str | None = None) -> dict:
+    """Grava uma reunião: nota-mãe + uma nota-filha por ponto, tudo linkado.
+
+    `extraction` é um MeetingExtraction (de src/meeting.py) — recebido como
+    parâmetro para este módulo não depender de meeting.py (evita ciclo de import).
+    Liga cada filha à mãe nos dois sentidos (append-only) e roda o auto-link
+    normal na mãe para conectá-la ao resto do vault (ex.: outras reuniões).
+    Retorna {mae: note_path, filhas: [note_path, ...]}.
+    """
+    from src.meeting import _mother_markdown, _point_markdown  # local: evita ciclo
+
+    vault = Path(vault_path) if vault_path else _require_vault()
+    date_str = datetime.now().strftime("%Y-%m-%d")
+
+    # 1) Nota-mãe.
+    mae_path = _write_note(vault, extraction.titulo, _mother_markdown(extraction, date_str))
+    mae_file = vault / mae_path
+
+    # 2) Uma filha por ponto, ligada à mãe nos dois sentidos.
+    filhas: list[str] = []
+    for ponto in extraction.pontos:
+        md = _point_markdown(ponto, extraction.titulo, date_str)
+        filha_path = _write_note(vault, ponto.texto, md)
+        _add_link(vault / filha_path, mae_path)   # filha -> mãe
+        _add_link(mae_file, filha_path)           # mãe -> filha
+        ingest_note(vault / filha_path, filha_path)
+        filhas.append(filha_path)
+
+    # 3) Re-indexa a mãe (ganhou os links das filhas) e conecta ao resto do vault.
+    ingest_note(mae_file, mae_path)
+    _autolink(vault, mae_file, mae_path, mae_file.read_text(encoding="utf-8", errors="replace"))
+
+    return {"mae": mae_path, "filhas": filhas}

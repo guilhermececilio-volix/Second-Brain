@@ -12,3 +12,12 @@ streamlit
 # Sprint 3 — API para o frontend Next.js
 fastapi
 uvicorn[standard]
+python-multipart   # upload de arquivos (.docx) na API
+
+# Reunião → notas: ler transcrição de arquivos .docx (Word/Teams)
+python-docx
+
+# Integração com Google Calendar (OAuth + API)
+google-auth
+google-auth-oauthlib
+google-api-python-client

@@ -25,12 +25,23 @@ from src.llm import GeminiLLM
 # Quantos chunks recuperar para montar o contexto.
 DEFAULT_TOP_K = 5
 
+# Teto de distância de cosseno para um chunk ser considerado relevante o bastante
+# para virar contexto/fonte. Acima disso, o chunk é descartado — evita que notas
+# fracas (ex.: 'Teste', 'Olá') poluam as fontes só para completar a cota de top_k.
+# Calibrado com o eval: as notas boas ficam ~0.35 e as triviais ~0.39+.
+MAX_HIT_DISTANCE = 0.38
+
 # Instrução de sistema: o modelo responde SÓ com base no contexto recuperado
 # e cita as notas de origem. Evita "alucinar" conhecimento que não está nas notas.
+# A data de hoje é injetada no prompt (ver _build_prompt) porque o modelo não tem
+# noção de tempo: sem isso, ele lê 'data: 2026-07-06' numa nota e chama de "hoje".
 SYSTEM_PROMPT = (
     "Você é o assistente de um 'second brain' pessoal. Responda à pergunta usando "
     "APENAS os trechos de notas fornecidos no contexto. Se a resposta não estiver "
     "no contexto, diga com honestidade que as notas não cobrem isso — não invente. "
+    "Cada nota tem uma 'data' no frontmatter: use a DATA DE HOJE informada para "
+    "situar no tempo (o que já passou, o que é hoje, o que é futuro). NÃO trate a "
+    "data de uma nota como 'hoje' a menos que ela coincida com a data de hoje. "
     "Responda em português, de forma direta e natural. Pode usar Markdown (negrito, "
     "listas) quando ajudar a organizar. NÃO cite o caminho nem o nome do arquivo das "
     "notas no meio da resposta — as fontes são mostradas separadamente pela interface."
@@ -46,17 +57,30 @@ class Answer:
     hits: list[SearchHit]  # chunks recuperados (para depuração/UI)
 
 
-def _build_prompt(question: str, hits: list[SearchHit]) -> str:
-    """Monta o prompt final: trechos de contexto rotulados + a pergunta."""
+def _build_prompt(question: str, hits: list[SearchHit], today: str | None) -> str:
+    """Monta o prompt final: data de hoje + trechos de contexto + a pergunta."""
     blocos = []
     for hit in hits:
         blocos.append(f"[Nota: {hit.note_path}]\n{hit.chunk_text}")
     contexto = "\n\n---\n\n".join(blocos)
-    return f"Contexto (trechos das suas notas):\n\n{contexto}\n\nPergunta: {question}"
+    cabecalho = f"Data de hoje: {today}\n\n" if today else ""
+    return (
+        f"{cabecalho}Contexto (trechos das suas notas):\n\n{contexto}\n\n"
+        f"Pergunta: {question}"
+    )
 
 
-def answer(question: str, top_k: int = DEFAULT_TOP_K) -> Answer:
-    """Responde a uma pergunta sobre as notas via RAG."""
+def answer(
+    question: str,
+    top_k: int = DEFAULT_TOP_K,
+    today: str | None = None,
+) -> Answer:
+    """Responde a uma pergunta sobre as notas via RAG.
+
+    today (ex.: '08/07/2026') é passado de fora para o modelo situar no tempo —
+    este módulo não lê o relógio (mesma regra de structure_note). Sem today, o
+    modelo perde a noção temporal e pode chamar a data de uma nota antiga de "hoje".
+    """
     question = question.strip()
     if not question:
         raise ValueError("A pergunta está vazia.")
@@ -68,15 +92,17 @@ def answer(question: str, top_k: int = DEFAULT_TOP_K) -> Answer:
     query_vector = embedder.embed(question)
     hits = db.search(query_vector, top_k=top_k)
 
+    # Descarta chunks fracos: só o que está de fato próximo vira contexto e fonte.
+    hits = [h for h in hits if h.distance <= MAX_HIT_DISTANCE]
+
     if not hits:
         return Answer(
-            text="Não há nada ingerido no banco ainda. "
-            "Rode 'python scripts/ingest.py' para indexar o seu vault.",
+            text="Suas notas não cobrem isso — não encontrei nada relevante.",
             sources=[],
             hits=[],
         )
 
-    prompt = _build_prompt(question, hits)
+    prompt = _build_prompt(question, hits, today)
     text = llm.ask(prompt, system=SYSTEM_PROMPT)
 
     # Fontes únicas, preservando a ordem de relevância.
@@ -113,17 +139,22 @@ def classify(message: str) -> str:
 
 
 # Instrução para o juiz de relação entre duas notas. Responde uma palavra.
+# Modelo de "hub": a nota de perfil/biografia é o centro que conecta os gostos e
+# admirações da pessoa; gostos DIFERENTES entre si (música x futebol) NÃO se ligam.
 RELATES_PROMPT = (
     "Você decide se duas notas merecem ser ligadas por um link, como no grafo do "
     "Obsidian. Todas as notas são de uma mesma pessoa (o dono do caderno); "
-    "'eu/meu/minha' se referem sempre a ela. Ligue quando as duas notas são sobre o "
-    "MESMO SUJEITO CONCRETO:\n"
-    "- ambas descrevem a PRÓPRIA pessoa (quem ela é): perfil, biografia, gostos, "
-    "preferências, características pessoais → LIGAR entre si.\n"
-    "- ambas sobre o mesmo projeto, trabalho, lugar ou evento específico → LIGAR.\n"
+    "'eu/meu/minha' se referem sempre a ela. Ligue quando:\n"
+    "- uma nota é o PERFIL/BIOGRAFIA da pessoa (quem ela é no geral) e a outra é um "
+    "gosto, preferência, ídolo ou admiração dela → LIGAR (o perfil é o centro que "
+    "conecta os gostos).\n"
+    "- ambas são sobre o MESMO SUJEITO CONCRETO: o mesmo projeto, trabalho, lugar, "
+    "evento ou item específico → LIGAR.\n"
+    "NÃO ligue dois gostos/admirações DIFERENTES entre si (ex.: música e futebol, "
+    "jogo e artista) — eles só se conectam através do perfil, não um ao outro. "
     "NÃO ligue quando uma é sobre a pessoa (perfil/gostos) e a outra sobre uma "
-    "atividade/projeto que ela faz — são sujeitos diferentes. NÃO ligue projetos "
-    "diferentes entre si, nem notas só por serem da mesma categoria."
+    "atividade/projeto que ela faz. NÃO ligue projetos diferentes entre si, nem "
+    "notas só por serem da mesma categoria."
 )
 
 # Limita o texto de cada nota enviado ao juiz (evita prompt gigante).

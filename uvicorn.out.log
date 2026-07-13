@@ -1,0 +1,25 @@
+INFO:     127.0.0.1:63061 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64426 - "OPTIONS /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64426 - "POST /chat HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:59739 - "OPTIONS /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53065 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50116 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54768 - "OPTIONS /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54768 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64490 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49880 - "GET /calendar/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64663 - "GET /calendar/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50413 - "POST /meeting/extract-docx HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59697 - "OPTIONS /meeting/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59697 - "POST /meeting/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53843 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59841 - "GET /calendar/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51959 - "GET /calendar/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51169 - "OPTIONS /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59849 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60803 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64224 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62302 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62123 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61865 - "OPTIONS /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61865 - "POST /chat HTTP/1.1" 200 OK

@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import Strands from "./strands";
 
-const API = "http://127.0.0.1:8000";
+const API = "http://127.0.0.1:8001";
 
 // --- Tipos das mensagens no histórico da conversa ---
 type Msg =
@@ -154,9 +155,26 @@ export default function Chat() {
         ))}
 
         {busy && (
-          <div className="flex justify-start">
-            <div className="rounded-2xl rounded-bl-md bg-surface border border-border px-4 py-3">
-              <Dots />
+          <div className="flex justify-start animate-rise w-full">
+            {/* O efeito Strands é o FUNDO do card, preenchendo tudo (position
+                absolute + inset-0). Sem div interna de tamanho fixo — assim não
+                se vê a "caixinha" do efeito terminando antes da borda. O texto
+                fica por cima (relative). overflow-hidden apara o efeito nas
+                bordas arredondadas do card. */}
+            <div className="relative w-full h-[140px] overflow-hidden rounded-2xl rounded-bl-md bg-surface border border-border">
+              <Strands
+                className="absolute inset-0"
+                style={{ width: "100%", height: "100%" }}
+                count={3}
+                speed={0.9}
+                glow={2.6}
+                intensity={0.8}
+                taper={3}
+                scale={2.6}
+              />
+              <div className="absolute bottom-2 left-0 right-0 text-xs text-muted text-center">
+                pensando…
+              </div>
             </div>
           </div>
         )}
@@ -302,20 +320,6 @@ function BtnPrimary({ children, onClick }: { children: React.ReactNode; onClick:
     >
       {children}
     </button>
-  );
-}
-
-function Dots() {
-  return (
-    <div className="flex gap-1 py-1">
-      {[0, 1, 2].map((i) => (
-        <span
-          key={i}
-          className="w-1.5 h-1.5 rounded-full bg-muted animate-pulse"
-          style={{ animationDelay: `${i * 0.15}s` }}
-        />
-      ))}
-    </div>
   );
 }
 

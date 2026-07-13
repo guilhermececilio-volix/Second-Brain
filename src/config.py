@@ -35,6 +35,15 @@ class Settings:
     database_url: str = field(default_factory=lambda: os.environ.get("DATABASE_URL", ""))
     obsidian_vault_path: str = field(default_factory=lambda: os.environ.get("OBSIDIAN_VAULT_PATH", ""))
 
+    # Integração Google Calendar (OAuth 2.0)
+    google_client_id: str = field(default_factory=lambda: os.environ.get("GOOGLE_CLIENT_ID", ""))
+    google_client_secret: str = field(default_factory=lambda: os.environ.get("GOOGLE_CLIENT_SECRET", ""))
+    google_token_path: str = field(default_factory=lambda: os.environ.get("GOOGLE_TOKEN_PATH", ".google_token.json"))
+
+    def google_oauth_ready(self) -> bool:
+        """True se as credenciais OAuth do Google estão configuradas no .env."""
+        return bool(self.google_client_id and self.google_client_secret)
+
     def require_api_key(self) -> str:
         """Retorna a chave da API ou encerra com mensagem clara se faltar."""
         if not self.gemini_api_key or self.gemini_api_key == "coloque-sua-chave-aqui":
